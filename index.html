@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Aritmatika Dasar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .start-screen, .quiz-screen, .result-screen {
+            display: none;
+        }
+
+        .start-screen.active, .quiz-screen.active, .result-screen.active {
+            display: block;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .question-number, .score {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .question {
+            font-size: 2.5em;
+            text-align: center;
+            margin: 40px 0;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .feedback {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .result-screen {
+            text-align: center;
+        }
+
+        .final-score {
+            font-size: 3em;
+            color: #667eea;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+
+        .result-message {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .timer {
+            font-size: 1.2em;
+            color: #764ba2;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 Quiz Aritmatika Dasar</h1>
+        
+        <!-- Start Screen -->
+        <div class="start-screen active">
+            <p style="text-align: center; margin-bottom: 20px; font-size: 1.1em;">Pilih tingkat kesulitan:</p>
+            <div class="difficulty-buttons">
+                <button class="btn-primary" onclick="startQuiz('mudah')">Mudah (1-10)</button>
+                <button class="btn-primary" onclick="startQuiz('sedang')">Sedang (1-50)</button>
+                <button class="btn-primary" onclick="startQuiz('sulit')">Sulit (1-100)</button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div class="quiz-screen">
+            <div class="question-header">
+                <span class="question-number">Soal <span id="currentQ">1</span>/10</span>
+                <span class="score">Skor: <span id="score">0</span></span>
+                <span class="timer">Waktu: <span id="timer">0</span>s</span>
+            </div>
+            
+            <div class="question" id="question"></div>
+            
+            <input type="number" class="answer-input" id="answerInput" placeholder="Masukkan jawaban Anda">
+            
+            <div class="feedback" id="feedback"></div>
+            
+            <button class="btn-primary" style="width: 100%;" onclick="checkAnswer()">Cek Jawaban</button>
+        </div>
+
+        <!-- Result Screen -->
+        <div class="result-screen">
+            <div class="final-score" id="finalScore"></div>
+            <div class="result-message" id="resultMessage"></div>
+            <p style="margin-bottom: 20px;">Waktu total: <span id="totalTime"></span> detik</p>
+            <button class="btn-primary" style="width: 100%;" onclick="restart()">Main Lagi</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 1;
+        let score = 0;
+        let correctAnswer = 0;
+        let difficulty = 'mudah';
+        let maxNumber = 10;
+        let startTime = 0;
+        let timerInterval;
+
+        function startQuiz(level) {
+            difficulty = level;
+            if (level === 'mudah') maxNumber = 10;
+            else if (level === 'sedang') maxNumber = 50;
+            else maxNumber = 100;
+
+            currentQuestion = 1;
+            score = 0;
+            startTime = Date.now();
+            
+            document.querySelector('.start-screen').classList.remove('active');
+            document.querySelector('.quiz-screen').classList.add('active');
+            
+            generateQuestion();
+            startTimer();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('timer').textContent = elapsed;
+            }, 1000);
+        }
+
+        function generateQuestion() {
+            const operations = ['+', '-', '×', '÷'];
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            
+            let num1, num2;
+            
+            if (operation === '÷') {
+                num2 = Math.floor(Math.random() * (maxNumber / 2)) + 1;
+                correctAnswer = Math.floor(Math.random() * (maxNumber / 2)) + 1;
+                num1 = num2 * correctAnswer;
+            } else {
+                num1 = Math.floor(Math.random() * maxNumber) + 1;
+                num2 = Math.floor(Math.random() * maxNumber) + 1;
+                
+                if (operation === '+') correctAnswer = num1 + num2;
+                else if (operation === '-') {
+                    if (num1 < num2) [num1, num2] = [num2, num1];
+                    correctAnswer = num1 - num2;
+                }
+                else if (operation === '×') correctAnswer = num1 * num2;
+            }
+            
+            document.getElementById('question').textContent = `${num1} ${operation} ${num2} = ?`;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('answerInput').focus();
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(document.getElementById('answerInput').value);
+            const feedback = document.getElementById('feedback');
+            
+            if (isNaN(userAnswer)) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Silakan masukkan jawaban!';
+                return;
+            }
+            
+            if (userAnswer === correctAnswer) {
+                score += 10;
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Benar! Luar biasa!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = `✗ Salah! Jawaban yang benar adalah ${correctAnswer}`;
+            }
+            
+            document.getElementById('score').textContent = score;
+            
+            setTimeout(() => {
+                if (currentQuestion < 10) {
+                    currentQuestion++;
+                    document.getElementById('currentQ').textContent = currentQuestion;
+                    generateQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1500);
+        }
+
+        function showResults() {
+            clearInterval(timerInterval);
+            const totalTime = Math.floor((Date.now() - startTime) / 1000);
+            
+            document.querySelector('.quiz-screen').classList.remove('active');
+            document.querySelector('.result-screen').classList.add('active');
+            
+            document.getElementById('finalScore').textContent = `${score}/100`;
+            document.getElementById('totalTime').textContent = totalTime;
+            
+            let message = '';
+            if (score === 100) message = '🏆 Sempurna! Anda adalah juara!';
+            else if (score >= 80) message = '🌟 Hebat! Sangat bagus!';
+            else if (score >= 60) message = '👍 Bagus! Terus berlatih!';
+            else message = '💪 Jangan menyerah! Coba lagi!';
+            
+            document.getElementById('resultMessage').textContent = message;
+        }
+
+        function restart() {
+            document.querySelector('.result-screen').classList.remove('active');
+            document.querySelector('.start-screen').classList.add('active');
+        }
+
+        document.getElementById('answerInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+    </script>
+</body>
+</html>
